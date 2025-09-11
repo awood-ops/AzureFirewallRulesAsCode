@@ -1,8 +1,6 @@
 # Azure Firewall Rules as Code using Bicep, Powershell and DevOps
 
-Please check out my blog post with all the most up to date information - [Blog Post](https://mendon.dev/azure-firewall-rules-as-code/)
-
-This fork is built upon the great work on of Will Moselhy - please check out his [GitHub repo](https://github.com/WillyMoselhy/AzureFirewallPolicyExportImport)
+This fork is built upon the great work on of Will Moselhy - please check out his [GitHub repo](https://github.com/WillyMoselhy/AzureFirewallPolicyExportImport) and Justin Mendon - (https://github.com/mendondev/AzureFirewallRulesAsCode)
 
 ## Using the scripts
 
