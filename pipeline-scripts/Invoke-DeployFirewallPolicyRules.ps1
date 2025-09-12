@@ -21,6 +21,7 @@ param(
     [Parameter(Mandatory = $false)]
     $SubscriptionId = "$($env:SUBSCRIPTION_ID)",
 
+    # These are extracted from the Bicep param file unless explicitly provided
     [Parameter(Mandatory = $false)]
     $ResourceGroupName,
 
@@ -28,22 +29,39 @@ param(
     $FirewallPolicyName,
 
     [Parameter(Mandatory = $false)]
-    $PolicyCsvPath = 'Firewall\config\custom-parameters\FirewallRules.csv',
-
-    [Parameter()]
-    [String]$TemplateParameterFile = "Firewall\config\custom-parameters\main.bicepparam",
+    $DefaultIpGroupResourceGroup,
 
     [Parameter(Mandatory = $false)]
-    $DefaultIpGroupResourceGroup
+    $PolicyCsvPath = '.\config\parameters\FirewallRules\FirewallRules-NoIPG.csv',
+
+    [Parameter()]
+    [String]$TemplateParameterFile = ".\config\parameters\HubNetworking\main.bicepparam"
 )
+
+# Validate required files exist
+if (!(Test-Path $PolicyCsvPath)) {
+    Write-Error "CSV file not found: $PolicyCsvPath"
+    exit 1
+}
+if (!(Test-Path $TemplateParameterFile)) {
+    Write-Error "Bicep parameter file not found: $TemplateParameterFile"
+    exit 1
+}
 
 # Extract the resource group name, firewall policy name, and default IP group resource group from the parameter file
 Write-Host "Reading resource group name from parameter file..."
 $parameters = (bicep build-params $TemplateParameterFile --stdout | ConvertFrom-Json).parametersJson | ConvertFrom-Json
-$ResourceGroupName = $parameters.parameters.parResourceNames.value.resourceGroup
-$FirewallPolicyName = $parameters.parameters.parResourceNames.value.firewallPolicy
-$DefaultIpGroupResourceGroup = $parameters.parameters.parResourceNames.value.ipGroupsResourceGroup
 
+# If parameters are not provided, extract from the parameter file
+if (-not $ResourceGroupName) {
+    $ResourceGroupName = $parameters.parameters.parResourceNames.value.resourceGroup
+}
+if (-not $FirewallPolicyName) {
+    $FirewallPolicyName = $parameters.parameters.parResourceNames.value.firewallPolicy
+}
+if (-not $DefaultIpGroupResourceGroup) {
+    $DefaultIpGroupResourceGroup = $parameters.parameters.parResourceNames.value.ipGroupsResourceGroup
+}
 
 Write-Host "Resource group name extracted: $ResourceGroupName"
 Write-Host "Firewall policy name extracted: $FirewallPolicyName"
@@ -259,8 +277,8 @@ foreach ($group in $groups) {
     $timeStamp = Get-Date -Format "yyyyMMdd-HHmmss"
     $deployParams = @{
         ResourceGroupName = $ResourceGroupName
-        Name              = "FWRules-Update-$timeStamp"
-        TemplateFile      = './Firewall/modules/fwpolicyrulecollectiongroup.bicep'
+        Name              = "FWRules-$($group.name)-$timeStamp"
+        TemplateFile      = './modules/Firewall/modules/fwpolicyrulecollectiongroup.bicep'
         TemplateParameterObject = @{
             firewallPolicyName = $group.firewallPolicyName
             name              = $group.name
