@@ -39,6 +39,9 @@ param parDiagnosticsEnabled bool = true
 // Firewall Parameters
 // =============================
 
+@sys.description('The flag to determine if Firewall Insights are enabled')
+param parFirewallInsightsIsEnabled bool
+
 @sys.description('The Firewall Policy SKU tier')
 param parFirewallPolicySkuTier string
 
@@ -164,6 +167,9 @@ module modFirewallPolicy 'br/public:avm/res/network/firewall-policy:0.3.1' = {
         modUserAssignedIdentity!.outputs.resourceId
       ]
     } : null
+    insightsIsEnabled: parFirewallInsightsIsEnabled
+    defaultWorkspaceResourceId: parFirewallInsightsIsEnabled ? resLogAnalyticsWorkspace.id : ''
+    retentionDays: parFirewallInsightsIsEnabled ? 30 : 0
     allowSqlRedirect: parAllowFirewallSQLRedirect
     location: parLocation
     enableProxy: parEnableFirewallDNSProxy

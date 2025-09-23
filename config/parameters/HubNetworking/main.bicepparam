@@ -80,6 +80,9 @@ param parSupportingServicesTags = {
 
 var varFirewallPremiumEnabled = bool(readEnvironmentVariable('FIREWALL_PREMIUM_ENABLED'))
 
+// Azure Firewall Insights enabled
+param parFirewallInsightsIsEnabled = bool(readEnvironmentVariable('FIREWALL_INSIGHTS_ENABLED'))
+
 // Azure Firewall Policy SKU tier
 param parFirewallPolicySkuTier = varFirewallPremiumEnabled ? 'Premium' : 'Standard'
 
