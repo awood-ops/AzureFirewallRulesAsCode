@@ -32,7 +32,7 @@ param(
     $DefaultIpGroupResourceGroup,
 
     [Parameter(Mandatory = $false)]
-    $PolicyCsvPath = '.\config\parameters\FirewallRules\FirewallRules-NoIPG.csv',
+    $PolicyCsvPath = '.\config\parameters\FirewallRules\FirewallRules.csv',
 
     [Parameter()]
     [String]$TemplateParameterFile = ".\config\parameters\HubNetworking\main.bicepparam"

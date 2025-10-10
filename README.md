@@ -6,7 +6,6 @@ A solid foundation for every Azure project begins with monitoring. As a first st
 
 - **Script:** `scripts/New-LogAnalyticsWorkspace.ps1`
 - **Purpose:** Creates a resource group and a basic Log Analytics workspace
-- **Instructions:** See the README in the `scripts` folder for details. The process is straightforward—the script does exactly what its name suggests.
 
 ### Environment Variables
 
