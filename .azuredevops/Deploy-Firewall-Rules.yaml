@@ -1,0 +1,100 @@
+# Deploy-Firewall-Rules.yaml
+# -------------------------------------------------------------
+# Azure DevOps pipeline for deploying Azure Firewall rules.
+# Triggers on changes to FirewallRules.csv, supports PR validation, and
+# runs resource provider enablement and firewall rule deployment stages.
+#
+# Stages:
+#   - EnableResourceProviders: Checks and enables required Azure resource providers.
+#   - Deploy: Deploys firewall rules using PowerShell and Azure CLI tasks.
+#
+# Parameters:
+#   - env: Environment name (default: prd)
+#
+# Variables:
+#   - ENVIRONMENT_NAME: Set from env parameter
+#   - IS_PULL_REQUEST: Indicates if running in PR context
+#   - ENV_FILE: Path to environment file
+#   - azureConnection: Azure service connection (set by environment)
+#
+# Usage:
+#   - On push or PR to main branch, pipeline validates and deploys firewall rules.
+# -------------------------------------------------------------
+
+name: Deploy-Firewall-Rules
+
+trigger:
+# YAML PR triggers are supported only in GitHub and Bitbucket Cloud.
+# If you use Azure Repos Git, you can configure a branch policy for build validation to trigger your build pipeline for validation.
+# https://learn.microsoft.com/en-us/azure/devops/repos/git/branch-policies#build-validation
+  branches:
+    include:
+      - "main"
+  paths:
+    include:
+      - "config/parameters/FirewallRules.csv"
+
+pr:
+  branches:
+    include:
+      - "main"
+  paths:
+    include:
+      - "config/parameters/FirewallRules.csv"
+
+parameters:
+- name: env
+  type: string
+  default: 'prd'
+  values:
+  - prd
+
+variables:
+  - name: ENVIRONMENT_NAME
+    value: ${{ parameters.env }}
+  - name: IS_PULL_REQUEST
+    value: "false"
+  - name: ENV_FILE
+    value: "$(System.DefaultWorkingDirectory)/config/${{ variables.ENVIRONMENT_NAME }}/.env"
+  - name: azureConnection
+  # sets the azureConnection var to the ADO library name aka service connection depending on the parameter selected
+    ${{ if eq(lower(parameters['env']), 'prod') }}:
+      value: ""
+
+stages:
+  - stage: Deploy
+    displayName: 'Deploy'
+    jobs:
+     - deployment: deploy
+       displayName: '🚀 Deploy Infrastructure'
+       pool:
+         vmImage: 'windows-latest'
+       environment: ${{ variables.ENVIRONMENT_NAME }}
+       strategy:
+         runOnce:
+           deploy:
+             steps:
+               - checkout: self
+                 displayName: Checkout Repo
+
+               - pwsh: |
+                   (Get-Content -Path $env:ENV_FILE -Encoding UTF8) | ForEach-Object {$_ -replace '"',''} | Out-File -FilePath $env:ENV_FILE -Encoding UTF8
+                 displayName: Remove Quotation Marks from Environment File
+         
+               - pwsh: |
+                   Write-Host $env:ENV_FILE
+                   Get-Content -Path $env:ENV_FILE -Encoding UTF8 | ForEach-Object {
+                     $envVarName, $envVarValue = ($_ -replace '"','').split('=')
+                     echo "##vso[task.setvariable variable=$envVarName;]$envVarValue"
+                     echo "Set $envVarName to $envVarValue"
+                   }
+                 displayName: Import Environment Variables from File 
+
+               - task: AzurePowerShell@5
+                 displayName: "Run the Deployment"
+                 inputs:
+                   azureSubscription: $(azureConnection)
+                   azurePowerShellVersion: "LatestVersion"
+                   pwsh: true
+                   ScriptType: FilePath
+                   ScriptPath: 'Firewall/pipeline-scripts/Invoke-DeployFirewallPolicyRules.ps1'
