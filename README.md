@@ -43,6 +43,33 @@ If you deploy with the defaults, your hub networking should look like this:
 
 ![Hub Networking Output](images\image.png)
 
+## Pull Request Validation
+
+This repository includes automated CSV validation that runs on pull requests to ensure firewall rules are properly formatted before deployment.
+
+**Quick Setup:**
+1. Create the pipeline from `.azuredevops/PR-Validation.yaml`
+2. Configure a branch policy on `main` to require the validation build
+3. Complete setup guide: [docs/PR-Validation-Setup.md](docs/PR-Validation-Setup.md)
+
+**What's Validated:**
+- CSV formatting (quotes, delimiters)
+- Priority conflicts
+- IP/CIDR notation
+- FQDN formats
+- Protocols and ports
+- Rule completeness
+
+**PR Workflow:**
+```
+Developer → Create Branch → Edit CSV → Commit & Push
+                                           ↓
+                                      Create PR → Validation Runs
+                                           ↓
+                                    ✓ Pass → Can Merge
+                                    ✗ Fail → Must Fix Errors
+```
+
 ## Script Workflow: Export, Edit, and Deploy Firewall Rules
 
 1. **Export Rules**
