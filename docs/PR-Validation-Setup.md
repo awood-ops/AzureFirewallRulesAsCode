@@ -111,6 +111,12 @@ The validation script checks:
 - ✅ **Priority Ranges**
   - Priorities between 100-65000
 
+- 🔒 **Destination Restrictions** (Security Check)
+  - Blocks Allow rules with destination `*` (permits traffic to ANY destination)
+  - Blocks Allow rules with `0.0.0.0/0` or overly broad CIDR ranges
+  - Wildcard FQDNs like `*.microsoft.com` are allowed
+  - Use `-AllowWildcardDestinations` to override (not recommended for production)
+
 ## Pipeline Behavior
 
 ### Triggers

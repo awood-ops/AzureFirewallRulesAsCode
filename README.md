@@ -176,6 +176,7 @@ DevOpsAgents,110,GitHub,180,Allow,FirewallPolicyFilterRuleCollection,Application
 - ✅ Protocol and port formats
 - ✅ Rule completeness (required fields)
 - ✅ Priority ranges (100-65000)
+- 🔒 Destination restrictions (blocks `*` and `0.0.0.0/0` in Allow rules)
 
 ### 4. Deploy Rules
 
@@ -247,9 +248,10 @@ Creates Pull Request ──→ Validation Pipeline Runs
 | **Priority Conflicts** | Duplicate priorities in same group | ❌ Blocks PR |
 | **IP/CIDR** | Valid: `10.0.0.0/24`, Invalid: `10.0.0.0/33` | ❌ Blocks PR |
 | **FQDNs** | Valid: `*.github.com`, Invalid: `github..com` | ❌ Blocks PR |
-| **Protocols** | Valid: `Https:443`, Invalid: `Https443` | ❌ Blocks PR |
+| **Protocols** | Valid: `Https:443`, Invalid: `Https444` | ❌ Blocks PR |
 | **Ports** | Valid: `1-65535`, Invalid: `70000` | ❌ Blocks PR |
 | **Completeness** | Missing Source/Destination | ⚠️ Warning |
+| **Security** | Allow rules with destination `*` or `0.0.0.0/0` | ❌ Blocks PR |
 
 📖 **Full guide:** [docs/PR-Validation-Setup.md](docs/PR-Validation-Setup.md)  
 📚 **Validation reference:** [docs/CSV-Validation-Reference.md](docs/CSV-Validation-Reference.md)

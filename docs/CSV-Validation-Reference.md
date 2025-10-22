@@ -16,6 +16,9 @@ Validates Azure Firewall Policy rules CSV files for formatting errors and rule c
 
 # Strict mode (warnings = failures)
 .\pipeline-scripts\Test-FirewallRulesCsv.ps1 -Strict
+
+# Allow wildcard destinations (not recommended for production)
+.\pipeline-scripts\Test-FirewallRulesCsv.ps1 -AllowWildcardDestinations
 ```
 
 ### Parameters
@@ -24,6 +27,7 @@ Validates Azure Firewall Policy rules CSV files for formatting errors and rule c
 |-----------|------|---------|-------------|
 | `PolicyCsvPath` | string | `.\config\parameters\FirewallRules\FirewallRules.csv` | Path to CSV file to validate |
 | `Strict` | switch | false | Fail on warnings (normally only fails on errors) |
+| `AllowWildcardDestinations` | switch | false | Allow rules with destination `*` or `0.0.0.0/0` (not recommended for security) |
 
 ### Exit Codes
 
@@ -98,6 +102,12 @@ Validates Azure Firewall Policy rules CSV files for formatting errors and rule c
 - ✅ RuleCollection priority: 100-65000
 - ✅ Numeric validation (no text values)
 
+#### 10. Destination Restrictions (Security Check)
+- ❌ **Allow rules with destination `*`** - Permits traffic to ANY destination (internet-wide)
+- ❌ **Allow rules with `0.0.0.0/0` or `/0-/7`** - Overly broad ranges
+- ✅ Override with `-AllowWildcardDestinations` (not recommended for production)
+- 💡 **Best practice**: Use specific IP ranges, FQDNs, or IP Groups
+
 ### Output Format
 
 ```
@@ -135,6 +145,9 @@ Checking CSV formatting...
 [8] Validating Priority Ranges...
   [OK]    All priorities are within valid range (100-65000)
 
+[9] Validating Destination Restrictions...
+  [OK]    No security risks detected (wildcard destinations)
+
 ========================================
 Validation Summary
 ========================================
@@ -157,6 +170,7 @@ Info:     0
 | `Invalid FQDN` | Special chars in domain | Use alphanumeric, hyphens, dots only |
 | `Invalid protocol format` | Missing `:` in ApplicationRule | Use format: `Https:443` |
 | `Priority out of range` | Priority < 100 or > 65000 | Set priority between 100-65000 |
+| `Security risk: wildcard destination` | Allow rule uses `*` or `0.0.0.0/0` | Use specific IP/CIDR ranges or use `-AllowWildcardDestinations` override |
 
 ### Integration with CI/CD
 

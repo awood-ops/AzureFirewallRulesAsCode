@@ -8,14 +8,17 @@
 #   - Valid port numbers and protocols
 #   - Rule name uniqueness within collections
 #   - Valid enum values for rule types and actions
+#   - Wildcard destination rules (security risk)
 #
 # Parameters:
 #   -PolicyCsvPath: Path to the CSV file containing rules
 #   -Strict: Enable strict validation (fails on warnings)
+#   -AllowWildcardDestinations: Allow rules with destination "*" (not recommended)
 #
 # Usage Example:
 #   .\Test-FirewallRulesCsv.ps1 -PolicyCsvPath './config/parameters/FirewallRules/FirewallRules.csv'
 #   .\Test-FirewallRulesCsv.ps1 -PolicyCsvPath './config/parameters/FirewallRules/FirewallRules.csv' -Strict
+#   .\Test-FirewallRulesCsv.ps1 -AllowWildcardDestinations
 # -------------------------------------------------------------
 
 [CmdletBinding()]
@@ -24,7 +27,10 @@ param(
     [string]$PolicyCsvPath = '.\config\parameters\FirewallRules\FirewallRules.csv',
 
     [Parameter(Mandatory = $false)]
-    [switch]$Strict
+    [switch]$Strict,
+
+    [Parameter(Mandatory = $false)]
+    [switch]$AllowWildcardDestinations
 )
 
 # Validation counters
@@ -543,6 +549,45 @@ foreach ($row in $csv) {
 
 if ($script:ErrorCount -eq 0) {
     Write-ValidationSuccess "All priorities are within valid range (100-65000)"
+}
+
+# Wildcard destination validation (security check)
+Write-Host "`n[9] Validating Destination Restrictions..." -ForegroundColor Cyan
+$lineNum = 2
+foreach ($row in $csv) {
+    if (-not [string]::IsNullOrEmpty($row.RuleName)) {
+        # Check for Allow rules with wildcard destinations (security risk)
+        if ($row.RuleCollectionAction -eq 'Allow') {
+            # Check DestinationAddresses for wildcards
+            if ($row.DestinationType -eq 'DestinationAddresses' -and $row.Destination -eq '*') {
+                if (-not $AllowWildcardDestinations) {
+                    Write-ValidationError "Security risk: Allow rule '$($row.RuleName)' uses wildcard destination '*'. This permits traffic to any destination. Use specific IP/CIDR ranges instead, or use -AllowWildcardDestinations to override." -Line $lineNum
+                } else {
+                    Write-ValidationWarning "Allow rule '$($row.RuleName)' uses wildcard destination '*' (override enabled)" -Line $lineNum
+                }
+            }
+            
+            # Check for overly broad CIDR ranges (e.g., 0.0.0.0/0)
+            if ($row.DestinationType -eq 'DestinationAddresses' -and $row.Destination) {
+                $destinations = $row.Destination -split ','
+                foreach ($dest in $destinations) {
+                    $dest = $dest.Trim()
+                    if ($dest -match '^0\.0\.0\.0/0$' -or $dest -match '^0\.0\.0\.0/[0-7]$') {
+                        if (-not $AllowWildcardDestinations) {
+                            Write-ValidationError "Security risk: Allow rule '$($row.RuleName)' uses overly broad destination '$dest'. This permits traffic to the entire internet. Use specific IP/CIDR ranges instead, or use -AllowWildcardDestinations to override." -Line $lineNum
+                        } else {
+                            Write-ValidationWarning "Allow rule '$($row.RuleName)' uses overly broad destination '$dest' (override enabled)" -Line $lineNum
+                        }
+                    }
+                }
+            }
+        }
+    }
+    $lineNum++
+}
+
+if ($script:ErrorCount -eq 0) {
+    Write-ValidationSuccess "No wildcard destination security risks detected"
 }
 
 # Summary
