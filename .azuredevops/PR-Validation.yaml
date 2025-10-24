@@ -1,0 +1,124 @@
+# PR-Validation.yaml
+# -------------------------------------------------------------
+# Azure DevOps pipeline for validating firewall rules CSV on pull requests.
+# Runs validation checks to ensure CSV is properly formatted and rules are valid
+# before allowing merge to main branch.
+#
+# Triggers:
+#   - Pull requests to main branch with changes to FirewallRules CSV files
+#
+# Stages:
+#   - Validate: Runs Test-FirewallRulesCsv.ps1 to validate CSV format and content
+#
+# Validation Checks:
+#   - CSV format (quotes, delimiters, structure)
+#   - Priority conflicts
+#   - Valid CIDR notation for IP addresses
+#   - Valid FQDN formats
+#   - Valid port numbers and protocols
+#   - Rule completeness and required fields
+#   - Priority ranges (100-65000)
+#
+# Usage:
+#   - Automatically runs on PR creation/update
+#   - Blocks merge if validation fails (exit code 1)
+#   - Must pass before PR can be completed
+# -------------------------------------------------------------
+
+name: PR-Validation-$(Date:yyyyMMdd)$(Rev:.r)
+
+# Only trigger on pull requests to main
+trigger: none
+
+pr:
+  branches:
+    include:
+      - "main"
+  paths:
+    include:
+      - "config/parameters/FirewallRules/**/*.csv"
+
+pool:
+  vmImage: 'windows-latest'
+
+stages:
+  - stage: Validate
+    displayName: 'Validate Firewall Rules CSV'
+    jobs:
+      - job: ValidateCSV
+        displayName: 'Run CSV Validation Tests'
+        steps:
+          - checkout: self
+            displayName: 'Checkout Repository'
+
+          - pwsh: |
+              Write-Host "========================================" -ForegroundColor Cyan
+              Write-Host "Firewall Rules CSV Validation" -ForegroundColor Cyan
+              Write-Host "========================================" -ForegroundColor Cyan
+              Write-Host ""
+              
+              # Find all CSV files in the FirewallRules directory
+              $csvFiles = Get-ChildItem -Path "$(Build.SourcesDirectory)/config/parameters/FirewallRules" -Filter "*.csv" -Recurse
+              
+              if ($csvFiles.Count -eq 0) {
+                Write-Host "##vso[task.logissue type=warning]No CSV files found to validate"
+                Write-Host "No CSV files found in config/parameters/FirewallRules/" -ForegroundColor Yellow
+                exit 0
+              }
+              
+              Write-Host "Found $($csvFiles.Count) CSV file(s) to validate:" -ForegroundColor Cyan
+              foreach ($file in $csvFiles) {
+                $displayPath = $file.FullName -replace [regex]::Escape("$(Build.SourcesDirectory)"), ""
+                Write-Host "  - $displayPath" -ForegroundColor White
+              }
+              Write-Host ""
+              
+              $allPassed = $true
+              $totalErrors = 0
+              $totalWarnings = 0
+              
+              foreach ($csvFile in $csvFiles) {
+                $relativePath = $csvFile.FullName -replace [regex]::Escape("$(Build.SourcesDirectory)"), ""
+                Write-Host "Validating: $relativePath" -ForegroundColor Cyan
+                Write-Host "----------------------------------------" -ForegroundColor Gray
+                
+                # Run validation script
+                $result = & "$(Build.SourcesDirectory)/pipeline-scripts/Test-FirewallRulesCsv.ps1" -PolicyCsvPath $csvFile.FullName
+                
+                if ($LASTEXITCODE -ne 0) {
+                  $allPassed = $false
+                  Write-Host "##vso[task.logissue type=error]Validation FAILED for $relativePath"
+                  $totalErrors++
+                } else {
+                  Write-Host "##[section]✓ Validation PASSED for $relativePath" -ForegroundColor Green
+                }
+                
+                Write-Host ""
+              }
+              
+              # Summary
+              Write-Host "========================================" -ForegroundColor Cyan
+              Write-Host "Validation Summary" -ForegroundColor Cyan
+              Write-Host "========================================" -ForegroundColor Cyan
+              Write-Host "Files validated: $($csvFiles.Count)" -ForegroundColor White
+              Write-Host "Failed: $totalErrors" -ForegroundColor $(if ($totalErrors -eq 0) { 'Green' } else { 'Red' })
+              Write-Host ""
+              
+              if (-not $allPassed) {
+                Write-Host "##vso[task.complete result=Failed;]CSV validation failed. Please fix the errors above."
+                exit 1
+              } else {
+                Write-Host "##[section]✓ All CSV files passed validation!" -ForegroundColor Green
+                exit 0
+              }
+            displayName: 'Validate Firewall Rules CSV Files'
+            errorActionPreference: 'Continue'
+            failOnStderr: false
+
+          - task: PublishBuildArtifacts@1
+            displayName: 'Publish Validation Results'
+            condition: always()
+            inputs:
+              PathtoPublish: '$(Build.SourcesDirectory)/config/parameters/FirewallRules'
+              ArtifactName: 'validated-csv-files'
+              publishLocation: 'Container'
