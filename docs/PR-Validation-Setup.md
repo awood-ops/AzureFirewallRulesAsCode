@@ -33,10 +33,12 @@ To make the validation **mandatory** and block pull requests from being complete
 6. Configure:
    - **Build pipeline**: Select `PR-Validation` (the pipeline you just created)
    - **Trigger**: `Automatic (whenever the source branch is updated)`
-   - **Policy requirement**: `Required` ✅
+   - **Policy requirement**: **`Required`** ✅ ⚠️ **CRITICAL: Must be "Required", not "Optional"**
    - **Build expiration**: `Immediately when main is updated`
    - **Display name**: `Firewall Rules CSV Validation`
 7. Click **Save**
+
+> **⚠️ Important**: If you set the policy requirement to "Optional" instead of "Required", the Complete button will NOT be disabled when validation fails. You must use "Required" to block PRs.
 
 ### 3. Test the Setup
 
@@ -66,11 +68,13 @@ To make the validation **mandatory** and block pull requests from being complete
 
 6. If validation fails:
    - The PR will show a **failed check** ❌
-   - The **Complete** button will be **disabled** or show a warning
-   - You must fix the errors before merging
+   - The **Complete merge** button will be **greyed out/disabled**
+   - A red warning banner will appear: "Firewall Rules CSV Validation failed"
+   - You **cannot** merge until errors are fixed
 
 7. If validation passes:
    - The PR will show a **passed check** ✅
+   - The **Complete merge** button will be **enabled** (blue/clickable)
    - The PR can be completed/merged
 
 ## What Gets Validated
@@ -163,6 +167,16 @@ If you need to bypass validation in an emergency:
 - Check for other branch policies (e.g., required reviewers)
 - Ensure the build policy shows as "Succeeded"
 - Try refreshing the PR page
+
+### Complete button NOT disabled when validation fails
+
+**Solution**:
+- Go to **Repos** → **Branches** → Find `main` → **...** → **Branch policies**
+- Under **Build Validation**, find your `PR-Validation` policy
+- Click **Edit** (pencil icon)
+- Verify **Policy requirement** is set to **`Required`** (NOT "Optional")
+- If it was "Optional", change it to "Required" and click **Save**
+- Close and reopen your PR, or trigger the validation again
 
 ## Local Testing
 

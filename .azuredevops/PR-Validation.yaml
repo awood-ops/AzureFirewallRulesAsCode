@@ -68,7 +68,8 @@ stages:
               
               Write-Host "Found $($csvFiles.Count) CSV file(s) to validate:" -ForegroundColor Cyan
               foreach ($file in $csvFiles) {
-                Write-Host "  - $($file.FullName.Replace("$(Build.SourcesDirectory)\", ""))" -ForegroundColor White
+                $displayPath = $file.FullName -replace [regex]::Escape("$(Build.SourcesDirectory)"), ""
+                Write-Host "  - $displayPath" -ForegroundColor White
               }
               Write-Host ""
               
@@ -77,7 +78,7 @@ stages:
               $totalWarnings = 0
               
               foreach ($csvFile in $csvFiles) {
-                $relativePath = $csvFile.FullName.Replace("$(Build.SourcesDirectory)\", "")
+                $relativePath = $csvFile.FullName -replace [regex]::Escape("$(Build.SourcesDirectory)"), ""
                 Write-Host "Validating: $relativePath" -ForegroundColor Cyan
                 Write-Host "----------------------------------------" -ForegroundColor Gray
                 
