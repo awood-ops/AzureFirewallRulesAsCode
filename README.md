@@ -250,7 +250,7 @@ Creates Pull Request ──→ Validation Pipeline Runs
 | **FQDNs** | Valid: `*.github.com`, Invalid: `github..com` | ❌ Blocks PR |
 | **Protocols** | Valid: `Https:443`, Invalid: `Https444` | ❌ Blocks PR |
 | **Ports** | Valid: `1-65535`, Invalid: `70000` | ❌ Blocks PR |
-| **Completeness** | Missing Source/Destination | ⚠️ Warning |
+| **Completeness** | Missing Source/Destination | ❌ Blocks PR |
 | **Security** | Allow rules with destination `*` or `0.0.0.0/0` | ❌ Blocks PR |
 
 📖 **Full guide:** [docs/PR-Validation-Setup.md](docs/PR-Validation-Setup.md)  

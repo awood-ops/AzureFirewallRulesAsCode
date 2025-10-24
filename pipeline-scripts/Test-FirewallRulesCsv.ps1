@@ -493,7 +493,7 @@ foreach ($row in $csv) {
         }
         
         if ([string]::IsNullOrWhiteSpace($row.Destination) -and $row.RuleType -ne 'NatRule') {
-            Write-ValidationWarning "Rule '$($row.RuleName)' is missing Destination" -Line $lineNum
+            Write-ValidationError "Rule '$($row.RuleName)' is missing Destination" -Line $lineNum
         }
         
         if ($row.RuleType -eq 'ApplicationRule' -and [string]::IsNullOrWhiteSpace($row.Protocols)) {

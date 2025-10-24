@@ -92,8 +92,8 @@ Validates Azure Firewall Policy rules CSV files for formatting errors and rule c
   - ✅ Port ranges: `80-443`
 
 #### 8. Rule Completeness
-- ✅ Source field required
-- ⚠️ Destination field required (warning only for non-NAT rules)
+- ✅ Source field required (error if missing)
+- ✅ Destination field required for non-NAT rules (error if missing)
 - ✅ ApplicationRule requires Protocols
 - ✅ NetworkRule requires Protocols and DestinationPorts
 
