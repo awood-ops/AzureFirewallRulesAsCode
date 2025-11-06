@@ -10,7 +10,8 @@ Manage Azure Firewall Policy rules using CSV files, Bicep, PowerShell, and Azure
 - ✅ **Automated Validation** - PR checks ensure rules are properly formatted before merge
 - 🚀 **Azure DevOps Integration** - CI/CD pipelines for deployment automation
 - 🏗️ **Hub Network Deployment** - Complete hub-and-spoke network infrastructure
-- 📊 **Export Existing Rules** - Extract current rules from Azure Firewall Policy to CSV
+- � **Private DNS Zones** - Optional deployment of Azure Private Link DNS zones for private endpoints
+- �📊 **Export Existing Rules** - Extract current rules from Azure Firewall Policy to CSV
 - 🔄 **Bidirectional Sync** - Export from Azure, edit locally, deploy back to Azure
 
 ## 📋 Table of Contents
@@ -89,6 +90,8 @@ LOG_ANALYTICS_RESOURCE_GROUP_NAME="rg-logs-prd"
 LOG_ANALYTICS_WORKSPACE_NAME="log-hub-prd"
 VNET_ADDRESS_PREFIX="10.0.0.0/20"
 FIREWALL_PREMIUM_ENABLED="true"
+FIREWALL_INSIGHTS_ENABLED="true"
+DEPLOY_PRIVATE_DNS_ZONES="true"
 DIAGNOSTICS_ENABLED="true"
 ```
 
@@ -110,6 +113,18 @@ Deploy the hub-and-spoke network infrastructure:
 ```
 
 This uses [Azure Verified Modules](https://aka.ms/avm) and Azure Deployment Stacks for robust infrastructure provisioning.
+
+**Private DNS Zones:**
+
+The deployment can optionally create [Azure Private Link DNS zones](https://learn.microsoft.com/azure/private-link/private-endpoint-dns) for all Azure services. These zones enable private endpoint DNS resolution for services like Storage, Key Vault, SQL Database, etc.
+
+- **Enable**: Set `DEPLOY_PRIVATE_DNS_ZONES="true"` - Recommended for hub networks that will host private endpoints
+- **Disable**: Set `DEPLOY_PRIVATE_DNS_ZONES="false"` - Use if you have centralized DNS zones elsewhere or don't use private endpoints
+
+The module automatically:
+- Deploys ~70 private DNS zones for Azure services (blob, file, vault, sql, etc.)
+- Links zones to your hub VNet for DNS resolution
+- Follows [Azure Landing Zone best practices](https://learn.microsoft.com/azure/cloud-adoption-framework/ready/azure-best-practices/private-link-and-dns-integration-at-scale)
 
 **Expected result:**
 

@@ -35,6 +35,9 @@ param parSupportingServicesTags object
 @sys.description('Required. Enable or Disable the Diagnostic Settings for resources.')
 param parDiagnosticsEnabled bool = true
 
+@sys.description('The flag to determine if Private DNS Zones should be deployed for Private Endpoints')
+param parDeployPrivateDnsZones bool
+
 // =============================
 // Firewall Parameters
 // =============================
@@ -259,6 +262,28 @@ module modHubNetworking 'br/public:avm/ptn/network/hub-networking:0.5.0' = {
     modResourceGroup
     modNSG
   ]
+}
+
+// =============================
+// Private DNS Zone Modules
+// =============================
+
+module modPrivateDnsZones 'br/public:avm/ptn/network/private-link-private-dns-zones:0.7.0' = if (parDeployPrivateDnsZones) {
+  scope: az.resourceGroup(parResourceNames.resourceGroup)
+  name: 'privateLinkPrivateDnsZonesDeployment'
+  params: {
+    virtualNetworkLinks: [
+      {
+        registrationEnabled: false
+        virtualNetworkResourceId: resourceId(
+          subscription().subscriptionId,
+          parResourceNames.resourceGroup,
+          'Microsoft.Network/virtualNetworks/',
+          parResourceNames.vnet
+        )
+      }
+    ]
+  }
 }
 
 // =============================
