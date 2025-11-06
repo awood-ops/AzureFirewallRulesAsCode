@@ -64,6 +64,10 @@ param parLocation = readEnvironmentVariable('LOCATION')
 
 param parDiagnosticsEnabled = bool(readEnvironmentVariable('DIAGNOSTICS_ENABLED'))
 
+// Deploy Private DNS Zones for Private Endpoints
+
+param parDeployPrivateDnsZones = bool(readEnvironmentVariable('DEPLOY_PRIVATE_DNS_ZONES'))
+
 // Tags for all hub networking resources
 param parTags = {
   'hidden-title': 'Hub Networking'
